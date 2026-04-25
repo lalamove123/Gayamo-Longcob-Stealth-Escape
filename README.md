@@ -43,11 +43,11 @@ This means invisibility truly protects you – you can walk right through enemie
 
 ## 🕹️ Controls
 
-| Action            | Keyboard           | Touch / Mobile          |
-|-------------------|--------------------|-------------------------|
-| Move up           | `↑` or `W`         | Up button on D‑pad      |
-| Move down         | `↓` or `S`         | Down button             |
-| Move left         | `←` or `A`         | Left button             |
-| Move right        | `→` or `D`         | Right button            |
-| Pause / Resume    | `P`                | On‑screen "⏸ Pause" button |
+| Action            | Keyboard           |
+|-------------------|--------------------|
+| Move up           | `↑` or `W`         |
+| Move down         | `↓` or `S`         |
+| Move left         | `←` or `A`         |
+| Move right        | `→` or `D`         |
+| Pause / Resume    | `P`                | 
 
