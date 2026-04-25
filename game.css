@@ -192,7 +192,7 @@ body::after {
 /* ---- HUD ---- */
 #hud {
   width: 100%;
-  flex-shrink: 0;             /* never shrink, always visible */
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -235,12 +235,30 @@ body::after {
   color: var(--col-text);
 }
 
+/* Pause button – matches HUD style */
+.pause-btn {
+  background: rgba(13, 17, 32, 0.85);
+  border: 1px solid var(--col-border);
+  border-radius: 6px;
+  color: var(--col-cyan);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 1px;
+  padding: 4px 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: 12px;
+}
+
+.pause-btn:hover {
+  border-color: var(--col-cyan);
+  box-shadow: var(--glow-cyan);
+  transform: scale(1.02);
+  background: rgba(0, 229, 255, 0.1);
+}
+
 /* ============================================================
    ALERT STATUS BADGE — 3-STAGE SYSTEM
-   
-   SAFE (green)           — Player is safe, move freely
-   SUSPICIOUS (yellow)    — Warning! Enemy is tracking you
-   DETECTED (red)         — Alarm triggered, game over
    ============================================================ */
 .hud-status {
   font-family: var(--font-title);
@@ -254,7 +272,7 @@ body::after {
   text-align: center;
 }
 
-/* ── SAFE STATE (Green) ──────────────────────────────────── */
+/* SAFE STATE (Green) */
 .hud-status.status-safe {
   color: var(--col-green);
   border-color: rgba(57, 255, 20, 0.5);
@@ -264,7 +282,7 @@ body::after {
   animation: none;
 }
 
-/* ── SUSPICIOUS STATE (Yellow) ───────────────────────────── */
+/* SUSPICIOUS STATE (Yellow) */
 .hud-status.status-suspicious {
   color: var(--col-yellow);
   border-color: rgba(247, 201, 72, 0.9);
@@ -288,7 +306,7 @@ body::after {
   }
 }
 
-/* ── DETECTED STATE (Red) ────────────────────────────────── */
+/* DETECTED STATE (Red) */
 .hud-status.status-detected {
   color: #fff;
   border-color: rgba(255, 68, 68, 1);
@@ -319,7 +337,7 @@ body::after {
    ---------------------------------------------------------------- */
 #canvasWrapper {
   flex: 1;
-  min-height: 0;              /* REQUIRED — allows flex-child to shrink */
+  min-height: 0;
   width: 100%;
   display: flex;
   align-items: center;

@@ -34,7 +34,7 @@
         <span>·</span>
         <span>Stay out of vision cones</span>
         <span>·</span>
-        <span>Collect dots → grab all 3 keys → reach exit</span>
+        <span>Collect all dots + 3 keys → reach exit</span>
       </div>
 
       <button class="btn-menu-play" id="btnStart">
@@ -44,7 +44,7 @@
       <a href="index.html" class="btn-back-link">← Back to Home</a>
     </div>
 
-    <!-- Music toggle — bottom-right of menu. Shows 🔇 MUSIC until unlocked. -->
+    <!-- Music toggle — bottom-right of menu -->
     <button id="menuMuteBtn" onclick="toggleMuteMusic()"
       style="position:absolute;bottom:18px;right:22px;
              font-family:'Share Tech Mono',monospace;font-size:0.78rem;letter-spacing:2px;
@@ -80,12 +80,14 @@
       <div class="hud-right">
         <div class="hud-item">
           <span class="hud-label">KEY</span>
-          <span class="hud-value" id="hudKey" style="color:var(--col-muted)">✗</span>
+          <span class="hud-value" id="hudKey">0/3</span>
         </div>
         <div class="hud-item">
           <span class="hud-label">POWER</span>
-          <span class="hud-value" id="hudPower" style="color:var(--col-muted)">—</span>
+          <span class="hud-value" id="hudPower">—</span>
         </div>
+        <!-- PAUSE BUTTON (required by game.js) -->
+        <button id="pauseBtn" class="pause-btn">⏸ Pause</button>
       </div>
     </div>
 
@@ -139,7 +141,7 @@
     <div class="end-content">
       <div class="end-icon win-bounce">🏆</div>
       <h2 class="end-title" style="color:var(--col-yellow)">ESCAPED!</h2>
-      <p class="end-sub">All 3 keys collected, all dots eaten —<br>you slipped away unseen!</p>
+      <p class="end-sub">You collected everything<br>and slipped away unseen!</p>
       <div class="end-score" id="winScore">Score: 0</div>
       <div class="end-btns">
         <button class="btn-end btn-retry" id="btnPlayAgain">▶ &nbsp;PLAY AGAIN</button>
@@ -147,7 +149,6 @@
       </div>
     </div>
   </div>
-
 
   <script src="game.js"></script>
 </body>
