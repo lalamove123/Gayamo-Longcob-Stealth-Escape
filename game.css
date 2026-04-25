@@ -1,0 +1,513 @@
+/* ============================================================
+   PACMAN: SHADOW ESCAPE  —  game.css
+   Styles for the game page only (game.html).
+   Font: Bungee (titles) + Share Tech Mono (HUD/UI)
+   Theme: Neon-noir arcade
+   ============================================================ */
+
+/* ---------- CSS Variables ---------- */
+:root {
+  --col-bg:       #050810;
+  --col-surface:  #0d1120;
+  --col-border:   #1a2540;
+  --col-yellow:   #f7c948;
+  --col-cyan:     #00e5ff;
+  --col-magenta:  #ff3cac;
+  --col-green:    #39ff14;
+  --col-red:      #ff4444;
+  --col-text:     #c8d8f0;
+  --col-muted:    #5a6a8a;
+  --font-title:   'Bungee', cursive;
+  --font-mono:    'Share Tech Mono', monospace;
+  --glow-yellow:  0 0 12px rgba(247,201,72,0.7), 0 0 40px rgba(247,201,72,0.3);
+  --glow-cyan:    0 0 12px rgba(0,229,255,0.7);
+  --glow-magenta: 0 0 12px rgba(255,60,172,0.7);
+  --glow-red:     0 0 14px rgba(255,68,68,0.9);
+}
+
+/* ---------- Reset ---------- */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;           /* no scroll bars during gameplay */
+  background: var(--col-bg);
+  font-family: var(--font-mono);
+  color: var(--col-text);
+}
+
+/* ============================================================
+   CRT scanline overlay (purely decorative, non-blocking)
+   ============================================================ */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.06) 2px,
+    rgba(0, 0, 0, 0.06) 4px
+  );
+  pointer-events: none;
+}
+
+/* ============================================================
+   SCREEN SYSTEM
+   Each major view is a .screen div.
+   Only the one with .active is visible.
+   ============================================================ */
+.screen {
+  position: fixed;
+  inset: 0;
+  display: none;              /* hidden by default */
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.screen.active {
+  display: flex;              /* shown when .active is added */
+}
+
+/* ============================================================
+   MENU SCREEN
+   ============================================================ */
+#screen-menu {
+  flex-direction: column;
+  text-align: center;
+  background: var(--col-bg);
+  overflow: hidden;
+}
+
+/* Floating dots injected by JS for background decoration */
+.menu-bg-dot {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(200, 216, 240, 0.22);
+  animation: dot-float linear infinite;
+}
+
+@keyframes dot-float {
+  0%   { transform: translateY(0);    opacity: 0.3; }
+  50%  { opacity: 0.6; }
+  100% { transform: translateY(-100vh); opacity: 0; }
+}
+
+/* Menu content card */
+.menu-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  padding: 24px 20px;
+}
+
+.menu-eyebrow {
+  font-size: 0.75rem;
+  letter-spacing: 4px;
+  color: var(--col-cyan);
+  text-shadow: var(--glow-cyan);
+}
+
+/* Big title */
+.menu-title {
+  font-family: var(--font-title);
+  line-height: 1.0;
+}
+.t-pac    { font-size: clamp(2rem, 6vw, 3.5rem); color: var(--col-yellow); text-shadow: var(--glow-yellow); }
+.t-col    { font-size: clamp(1.5rem, 4vw, 2.5rem); color: var(--col-muted); }
+.t-shadow { font-size: clamp(2rem, 6vw, 3.5rem); color: var(--col-cyan); text-shadow: var(--glow-cyan); }
+.t-escape { font-size: clamp(2.5rem, 8vw, 5rem); color: var(--col-magenta); text-shadow: var(--glow-magenta); display: block; }
+
+.menu-tagline {
+  font-size: 0.9rem;
+  letter-spacing: 4px;
+  color: var(--col-muted);
+  text-transform: uppercase;
+}
+
+/* Controls hint row */
+.menu-controls-hint {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  font-size: 0.72rem;
+  color: var(--col-muted);
+  border: 1px solid var(--col-border);
+  padding: 10px 20px;
+  border-radius: 6px;
+  max-width: 560px;
+}
+
+/* Main play button */
+.btn-menu-play {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--col-yellow);
+  color: var(--col-bg);
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-title);
+  font-size: 1.1rem;
+  letter-spacing: 3px;
+  padding: 16px 48px;
+  border-radius: 8px;
+  transition: box-shadow 0.2s, transform 0.15s;
+  margin-top: 8px;
+}
+.btn-menu-play:hover {
+  box-shadow: var(--glow-yellow);
+  transform: scale(1.04);
+}
+
+.btn-back-link {
+  color: var(--col-muted);
+  text-decoration: none;
+  font-size: 0.8rem;
+  letter-spacing: 2px;
+  transition: color 0.2s;
+}
+.btn-back-link:hover { color: var(--col-cyan); }
+
+/* ============================================================
+   GAME SCREEN
+   Layout: HUD bar at top → canvas fills remaining height
+   ============================================================ */
+#screen-game {
+  flex-direction: column;
+  background: #030508;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ---- HUD ---- */
+#hud {
+  width: 100%;
+  flex-shrink: 0;             /* never shrink, always visible */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 20px;
+  background: rgba(5, 8, 16, 0.92);
+  border-bottom: 1px solid var(--col-border);
+  z-index: 50;
+  min-height: 48px;
+}
+
+.hud-left, .hud-right {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+}
+
+.hud-center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.hud-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.2;
+}
+
+.hud-label {
+  font-size: 0.58rem;
+  letter-spacing: 2px;
+  color: var(--col-muted);
+  text-transform: uppercase;
+}
+
+.hud-value {
+  font-family: var(--font-title);
+  font-size: 1rem;
+  color: var(--col-text);
+}
+
+/* ============================================================
+   ALERT STATUS BADGE — 3-STAGE SYSTEM
+   
+   SAFE (green)           — Player is safe, move freely
+   SUSPICIOUS (yellow)    — Warning! Enemy is tracking you
+   DETECTED (red)         — Alarm triggered, game over
+   ============================================================ */
+.hud-status {
+  font-family: var(--font-title);
+  font-size: 0.72rem;
+  letter-spacing: 3px;
+  padding: 4px 16px;
+  border-radius: 20px;
+  border: 1px solid transparent;
+  transition: all 0.3s ease-out;
+  min-width: 200px;
+  text-align: center;
+}
+
+/* ── SAFE STATE (Green) ──────────────────────────────────── */
+.hud-status.status-safe {
+  color: var(--col-green);
+  border-color: rgba(57, 255, 20, 0.5);
+  background: rgba(57, 255, 20, 0.08);
+  text-shadow: none;
+  box-shadow: inset 0 0 8px rgba(57, 255, 20, 0.1);
+  animation: none;
+}
+
+/* ── SUSPICIOUS STATE (Yellow) ───────────────────────────── */
+.hud-status.status-suspicious {
+  color: var(--col-yellow);
+  border-color: rgba(247, 201, 72, 0.9);
+  background: rgba(247, 201, 72, 0.18);
+  text-shadow: 0 0 8px rgba(247, 201, 72, 0.9);
+  box-shadow: inset 0 0 12px rgba(247, 201, 72, 0.2), 
+              0 0 12px rgba(247, 201, 72, 0.6);
+  animation: pulse-suspicious 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes pulse-suspicious {
+  from {
+    box-shadow: inset 0 0 8px rgba(247, 201, 72, 0.15),
+                0 0 8px rgba(247, 201, 72, 0.4);
+    transform: scale(1);
+  }
+  to {
+    box-shadow: inset 0 0 16px rgba(247, 201, 72, 0.3),
+                0 0 20px rgba(247, 201, 72, 0.8);
+    transform: scale(1.02);
+  }
+}
+
+/* ── DETECTED STATE (Red) ────────────────────────────────── */
+.hud-status.status-detected {
+  color: #fff;
+  border-color: rgba(255, 68, 68, 1);
+  background: rgba(255, 68, 68, 0.35);
+  text-shadow: 0 0 10px rgba(255, 68, 68, 1);
+  box-shadow: inset 0 0 16px rgba(255, 68, 68, 0.4),
+              0 0 20px rgba(255, 68, 68, 1);
+  animation: pulse-danger 0.2s ease-in-out infinite alternate;
+}
+
+@keyframes pulse-danger {
+  from {
+    box-shadow: inset 0 0 12px rgba(255, 68, 68, 0.3),
+                0 0 16px rgba(255, 68, 68, 0.9);
+    transform: scale(1);
+  }
+  to {
+    box-shadow: inset 0 0 20px rgba(255, 68, 68, 0.5),
+                0 0 30px rgba(255, 68, 68, 1);
+    transform: scale(1.05);
+  }
+}
+
+/* ---- Canvas wrapper ----
+   flex: 1 + min-height: 0 is the critical combo that allows
+   the wrapper to fill all remaining vertical space inside the
+   flex column without overflowing.
+   ---------------------------------------------------------------- */
+#canvasWrapper {
+  flex: 1;
+  min-height: 0;              /* REQUIRED — allows flex-child to shrink */
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+  background: #020408;
+}
+
+#gameCanvas {
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  /* Width/height set in px by JS resizeCanvas() */
+}
+
+/* ---- Alert overlay (floating ! or ⚠ icon) ---- */
+.alert-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 20;
+  transition: opacity 0.25s;
+}
+
+.alert-overlay.hidden { opacity: 0; pointer-events: none; }
+
+.alert-text {
+  font-family: var(--font-title);
+  font-size: 2.8rem;
+  color: var(--col-red);
+  text-shadow: 0 0 20px rgba(255,68,68,1), 0 0 60px rgba(255,68,68,0.5);
+  animation: alert-bounce 0.2s ease-in-out infinite alternate;
+  letter-spacing: 4px;
+  background: rgba(0,0,0,0.6);
+  padding: 12px 32px;
+  border: 2px solid rgba(255,68,68,0.6);
+  border-radius: 8px;
+}
+
+@keyframes alert-bounce {
+  from { transform: scale(1); }
+  to   { transform: scale(1.25); }
+}
+
+/* ---- Mobile d-pad ---- */
+#mobileControls {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px;
+  flex-shrink: 0;
+  background: rgba(5, 8, 16, 0.85);
+  border-top: 1px solid var(--col-border);
+}
+
+.mobile-row {
+  display: flex;
+  gap: 4px;
+}
+
+.mobile-btn {
+  width: 54px;
+  height: 54px;
+  background: var(--col-surface);
+  border: 1px solid var(--col-border);
+  border-radius: 8px;
+  color: var(--col-text);
+  font-size: 1.3rem;
+  cursor: pointer;
+  transition: background 0.1s, border-color 0.1s;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  touch-action: none;
+}
+
+.mobile-btn:active {
+  background: rgba(0, 229, 255, 0.12);
+  border-color: var(--col-cyan);
+}
+
+/* Show d-pad on touch screens or small screens */
+@media (max-width: 680px), (pointer: coarse) {
+  #mobileControls { display: flex; }
+}
+
+/* ============================================================
+   GAME OVER & WIN SCREENS
+   ============================================================ */
+#screen-gameover,
+#screen-win {
+  background: rgba(5, 8, 16, 0.96);
+  flex-direction: column;
+}
+
+.end-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 44px 36px;
+  background: var(--col-surface);
+  border: 1px solid var(--col-border);
+  border-radius: 16px;
+  max-width: 440px;
+  width: 90%;
+  text-align: center;
+  position: relative;
+}
+
+/* Coloured top bar */
+.end-content::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  border-radius: 16px 16px 0 0;
+  background: linear-gradient(90deg, var(--col-cyan), var(--col-magenta));
+}
+
+.end-icon {
+  font-size: 3.5rem;
+}
+
+/* Win trophy bounces */
+.win-bounce {
+  animation: win-bounce 0.55s ease-in-out infinite alternate;
+}
+@keyframes win-bounce {
+  from { transform: translateY(0)  rotate(-5deg); }
+  to   { transform: translateY(-8px) rotate(5deg); }
+}
+
+.end-title {
+  font-family: var(--font-title);
+  font-size: 2.4rem;
+  letter-spacing: 4px;
+}
+
+.end-sub {
+  font-size: 0.85rem;
+  color: var(--col-muted);
+  line-height: 1.65;
+}
+
+.end-score {
+  font-family: var(--font-title);
+  font-size: 1.5rem;
+  color: var(--col-yellow);
+  text-shadow: var(--glow-yellow);
+}
+
+/* End-screen buttons */
+.end-btns {
+  display: flex;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.btn-end {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-family: var(--font-title);
+  font-size: 0.85rem;
+  letter-spacing: 2px;
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+  transition: transform 0.15s, box-shadow 0.2s;
+}
+.btn-end:hover { transform: translateY(-2px); }
+
+.btn-retry {
+  background: var(--col-yellow);
+  color: var(--col-bg);
+}
+.btn-retry:hover { box-shadow: var(--glow-yellow); }
+
+.btn-home {
+  background: transparent;
+  color: var(--col-cyan);
+  border: 1px solid rgba(0, 229, 255, 0.3) !important;
+}
+.btn-home:hover { box-shadow: var(--glow-cyan); }

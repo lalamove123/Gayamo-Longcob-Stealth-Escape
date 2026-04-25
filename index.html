@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pacman: Shadow Escape</title>
+  <link rel="stylesheet" href="index.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Animated grid background -->
+  <div class="bg-grid"></div>
+  <div class="scanlines"></div>
+
+  <header class="site-header">
+    <nav class="nav">
+      <span class="nav-logo">👾 PSE</span>
+      <ul class="nav-links">
+        <li><a href="index.html" class="active">Home</a></li>
+        <li><a href="team.html">Team</a></li>
+        <li><a href="game.html" class="nav-play">Play</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="hero-glow"></div>
+
+      <div class="title-block">
+        <div class="title-eyebrow">— STEALTH ARCADE —</div>
+        <h1 class="game-title">
+          <span class="title-pac">PACMAN</span>
+          <span class="title-colon">:</span>
+          <span class="title-shadow">SHADOW</span>
+          <br>
+          <span class="title-escape">ESCAPE</span>
+        </h1>
+        <p class="hero-tagline">Hide. Sneak. Survive.</p>
+      </div>
+
+      <div class="hero-preview">
+        <!-- Animated maze preview -->
+        <canvas id="previewCanvas" width="320" height="320"></canvas>
+      </div>
+
+      <div class="hero-cta">
+        <a href="game.html" class="btn-play">
+          <span class="btn-icon">▶</span>
+          <span>PLAY NOW</span>
+        </a>
+        <a href="#features" class="btn-learn">LEARN MORE ↓</a>
+      </div>
+
+      <div class="hero-stats">
+        <div class="stat"><span class="stat-num">3</span><span class="stat-label">Alert Stages</span></div>
+        <div class="stat-divider">|</div>
+        <div class="stat"><span class="stat-num">360°</span><span class="stat-label">Vision Cones</span></div>
+        <div class="stat-divider">|</div>
+        <div class="stat"><span class="stat-num">∞</span><span class="stat-label">Stealth Fun</span></div>
+      </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features" id="features">
+      <h2 class="section-title">GAME FEATURES</h2>
+      <div class="features-grid">
+
+        <div class="feature-card card-stealth">
+          <div class="card-icon">👁️</div>
+          <h3>DIRECTIONAL VISION</h3>
+          <p>Enemies have a directional cone of sight. Slip behind their field of view and stay invisible. Walls block all detection — no cheap hits.</p>
+          <div class="card-tag">STEALTH</div>
+        </div>
+
+        <div class="feature-card card-alert">
+          <div class="card-icon">⚠️</div>
+          <h3>3-STAGE ALERT SYSTEM</h3>
+          <p><strong>SAFE → SUSPICIOUS → DETECTED.</strong> You get a warning before it's game over. React fast and slip away before the alarm triggers.</p>
+          <div class="card-tag">DETECTION</div>
+        </div>
+
+        <div class="feature-card card-patrol">
+          <div class="card-icon">🔄</div>
+          <h3>SMART PATROL AI</h3>
+          <p>Guards patrol paths, pause at intersections and randomly pick new routes. Learn their patterns — then exploit them.</p>
+          <div class="card-tag">AI</div>
+        </div>
+
+        <div class="feature-card card-maze">
+          <div class="card-icon">🗺️</div>
+          <h3>CLASSIC MAZE</h3>
+          <p>Navigate a Pacman-style grid maze. Collect all dots, grab the key, and reach the exit before you're spotted.</p>
+          <div class="card-tag">GAMEPLAY</div>
+        </div>
+
+        <div class="feature-card card-shadow">
+          <div class="card-icon">🌑</div>
+          <h3>DARK ZONES</h3>
+          <p>Hide in shadow tiles where enemies can't detect you. Use these safe spots strategically to plan your route.</p>
+          <div class="card-tag">STEALTH</div>
+        </div>
+
+        <div class="feature-card card-power">
+          <div class="card-icon">⚡</div>
+          <h3>POWER-UPS</h3>
+          <p>Grab invisibility orbs for temporary invincibility — or a speed boost to zip past danger. Use them wisely.</p>
+          <div class="card-tag">BONUS</div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Controls Section -->
+    <section class="controls-section" id="controls">
+      <h2 class="section-title">HOW TO PLAY</h2>
+      <div class="controls-layout">
+        <div class="controls-keys">
+          <h3>CONTROLS</h3>
+          <div class="key-grid">
+            <div class="key-row">
+              <div class="key-empty"></div>
+              <div class="key">W<br><span>↑</span></div>
+              <div class="key-empty"></div>
+            </div>
+            <div class="key-row">
+              <div class="key">A<br><span>←</span></div>
+              <div class="key">S<br><span>↓</span></div>
+              <div class="key">D<br><span>→</span></div>
+            </div>
+          </div>
+          <p class="key-note">or Arrow Keys</p>
+        </div>
+
+        <div class="controls-steps">
+          <h3>OBJECTIVE</h3>
+          <ol class="steps-list">
+            <li><span class="step-num">01</span><span>Collect all <strong>dots</strong> in the maze</span></li>
+            <li><span class="step-num">02</span><span>Find and grab the <strong>3 keys 🔑</strong></span></li>
+            <li><span class="step-num">03</span><span>Reach the <strong>exit door</strong> to win</span></li>
+            <li><span class="step-num">04</span><span>Avoid enemy <strong>vision cones</strong> at all costs</span></li>
+            <li><span class="step-num">05</span><span>Use <strong>dark zones</strong> and power-ups to survive</span></li>
+          </ol>
+        </div>
+
+        <div class="controls-legend">
+          <h3>LEGEND</h3>
+          <div class="legend-items">
+            <div class="legend-item"><span class="legend-dot dot-collect"></span>Collectible Dot</div>
+            <div class="legend-item"><span class="legend-dot dot-key"></span>Key Item</div>
+            <div class="legend-item"><span class="legend-dot dot-exit"></span>Exit Door</div>
+            <div class="legend-item"><span class="legend-dot dot-safe"></span>Safe / Dark Zone</div>
+            <div class="legend-item"><span class="legend-dot dot-power"></span>Power-Up</div>
+            <div class="legend-item"><span class="legend-dot dot-enemy"></span>Enemy Guard</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA Banner -->
+    <section class="cta-banner">
+      <div class="cta-content">
+        <h2>READY TO SNEAK?</h2>
+        <p>Can you collect everything and escape without being seen?</p>
+        <a href="game.html" class="btn-play btn-play-large">
+          <span class="btn-icon">▶</span>
+          <span>START GAME</span>
+        </a>
+      </div>
+      <div class="cta-dots-anim"></div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <span class="footer-logo">PACMAN: SHADOW ESCAPE</span>
+      <span class="footer-sep">·</span>
+      <a href="team.html">Meet the Team</a>
+      <span class="footer-sep">·</span>
+      <span>Made with HTML, CSS & JS</span>
+    </div>
+  </footer>
+
+  <script src="index.js"></script>
+</body>
+</html>

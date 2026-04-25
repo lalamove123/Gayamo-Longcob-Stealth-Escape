@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Play — Pacman: Shadow Escape</title>
+  <link rel="stylesheet" href="game.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- =====================================================
+       SCREEN 1: MENU
+       ===================================================== -->
+  <div id="screen-menu" class="screen active">
+
+    <!-- Floating background dots (spawned by JS) -->
+    <div id="menuBgDots" style="position:absolute;inset:0;overflow:hidden;pointer-events:none;"></div>
+
+    <div class="menu-content">
+      <div class="menu-eyebrow">— STEALTH ARCADE —</div>
+
+      <h1 class="menu-title">
+        <span class="t-pac">PACMAN</span><span class="t-col">:</span><br>
+        <span class="t-shadow">SHADOW</span><br>
+        <span class="t-escape">ESCAPE</span>
+      </h1>
+
+      <p class="menu-tagline">Hide. Sneak. Survive.</p>
+
+      <div class="menu-controls-hint">
+        <span>WASD / Arrow Keys to move</span>
+        <span>·</span>
+        <span>Stay out of vision cones</span>
+        <span>·</span>
+        <span>Collect dots → grab all 3 keys → reach exit</span>
+      </div>
+
+      <button class="btn-menu-play" id="btnStart">
+        ▶ &nbsp;START GAME
+      </button>
+
+      <a href="index.html" class="btn-back-link">← Back to Home</a>
+    </div>
+
+    <!-- Music toggle — bottom-right of menu. Shows 🔇 MUSIC until unlocked. -->
+    <button id="menuMuteBtn" onclick="toggleMuteMusic()"
+      style="position:absolute;bottom:18px;right:22px;
+             font-family:'Share Tech Mono',monospace;font-size:0.78rem;letter-spacing:2px;
+             background:rgba(13,17,32,0.85);border:1px solid #1a2540;border-radius:8px;
+             color:#5a6a8a;padding:7px 14px;cursor:pointer;z-index:10;
+             transition:color .2s,border-color .2s,box-shadow .2s;">🔇 MUSIC</button>
+  </div>
+
+
+  <!-- =====================================================
+       SCREEN 2: GAMEPLAY
+       ===================================================== -->
+  <div id="screen-game" class="screen">
+
+    <!-- HUD bar -->
+    <div id="hud">
+      <div class="hud-left">
+        <div class="hud-item">
+          <span class="hud-label">SCORE</span>
+          <span class="hud-value" id="hudScore">0</span>
+        </div>
+        <div class="hud-item">
+          <span class="hud-label">DOTS</span>
+          <span class="hud-value" id="hudDots">0/0</span>
+        </div>
+      </div>
+
+      <div class="hud-center">
+        <!-- Alert status: SAFE / SUSPICIOUS! / DETECTED! -->
+        <div class="hud-status status-safe" id="hudStatus">SAFE</div>
+      </div>
+
+      <div class="hud-right">
+        <div class="hud-item">
+          <span class="hud-label">KEY</span>
+          <span class="hud-value" id="hudKey" style="color:var(--col-muted)">✗</span>
+        </div>
+        <div class="hud-item">
+          <span class="hud-label">POWER</span>
+          <span class="hud-value" id="hudPower" style="color:var(--col-muted)">—</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Canvas wrapper: fills remaining vertical space -->
+    <div id="canvasWrapper">
+      <!-- Floating alert icon (! or ⚠) shown when suspicious/detected -->
+      <div id="alertOverlay" class="alert-overlay hidden">
+        <span id="alertText" class="alert-text">!</span>
+      </div>
+
+      <!-- THE GAME CANVAS — sized by JS, never by CSS width/height -->
+      <canvas id="gameCanvas"></canvas>
+    </div>
+
+    <!-- Mobile D-Pad (hidden on desktop) -->
+    <div id="mobileControls">
+      <div class="mobile-row">
+        <button class="mobile-btn" id="mBtn-up">▲</button>
+      </div>
+      <div class="mobile-row">
+        <button class="mobile-btn" id="mBtn-left">◀</button>
+        <button class="mobile-btn" id="mBtn-down">▼</button>
+        <button class="mobile-btn" id="mBtn-right">▶</button>
+      </div>
+    </div>
+
+  </div>
+
+
+  <!-- =====================================================
+       SCREEN 3: GAME OVER
+       ===================================================== -->
+  <div id="screen-gameover" class="screen">
+    <div class="end-content">
+      <div class="end-icon">💀</div>    
+      <h2 class="end-title" style="color:var(--col-red)">DETECTED!</h2>
+      <p class="end-sub">An enemy spotted you.<br>You've been caught.</p>
+      <div class="end-score" id="goScore">Score: 0</div>
+      <div class="end-btns">
+        <button class="btn-end btn-retry" id="btnRetry">↺ &nbsp;TRY AGAIN</button>
+        <a href="index.html" class="btn-end btn-home">⌂ &nbsp;HOME</a>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- =====================================================
+       SCREEN 4: WIN
+       ===================================================== -->
+  <div id="screen-win" class="screen">
+    <div class="end-content">
+      <div class="end-icon win-bounce">🏆</div>
+      <h2 class="end-title" style="color:var(--col-yellow)">ESCAPED!</h2>
+      <p class="end-sub">All 3 keys collected, all dots eaten —<br>you slipped away unseen!</p>
+      <div class="end-score" id="winScore">Score: 0</div>
+      <div class="end-btns">
+        <button class="btn-end btn-retry" id="btnPlayAgain">▶ &nbsp;PLAY AGAIN</button>
+        <a href="index.html" class="btn-end btn-home">⌂ &nbsp;HOME</a>
+      </div>
+    </div>
+  </div>
+
+
+  <script src="game.js"></script>
+</body>
+</html>

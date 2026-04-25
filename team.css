@@ -1,0 +1,213 @@
+/* ============================================================
+   PACMAN: SHADOW ESCAPE — Team Page Additional Styles
+   ============================================================ */
+
+.team-main {
+  position: relative; z-index: 1;
+  max-width: 1100px; margin: 0 auto;
+  padding: 80px 24px 60px;
+}
+
+.team-hero {
+  text-align: center;
+  margin-bottom: 80px;
+}
+
+.team-title {
+  font-family: var(--font-title);
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  color: var(--col-text);
+  letter-spacing: 4px;
+  margin: 12px 0 16px;
+}
+.team-title span {
+  color: var(--col-cyan);
+  text-shadow: var(--glow-cyan);
+}
+.team-subtitle {
+  color: var(--col-muted);
+  font-size: 1rem;
+  letter-spacing: 3px;
+}
+
+/* ---- DEV CARDS ---- */
+.team-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(440px, 1fr));
+  gap: 32px;
+  margin-bottom: 100px;
+}
+
+.dev-card {
+  background: var(--col-surface);
+  border: 1px solid var(--col-border);
+  border-radius: 12px;
+  padding: 40px 36px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  transition: border-color 0.3s, transform 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+.dev-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, var(--col-cyan), var(--col-magenta));
+}
+.dev-card:hover {
+  border-color: rgba(0,229,255,0.3);
+  transform: translateY(-4px);
+}
+
+.dev-avatar {
+  position: relative;
+  width: 100px; height: 100px;
+  flex-shrink: 0;
+}
+.avatar-inner {
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.4);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid var(--avatar-color, var(--col-yellow));
+  box-shadow: 0 0 20px color-mix(in srgb, var(--avatar-color, var(--col-yellow)) 40%, transparent);
+}
+.avatar-ring {
+  position: absolute; inset: -6px;
+  border-radius: 50%;
+  border: 1px solid var(--avatar-color, var(--col-yellow));
+  opacity: 0.3;
+  animation: ring-pulse 2s ease-in-out infinite;
+}
+@keyframes ring-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.3; }
+  50% { transform: scale(1.08); opacity: 0.1; }
+}
+
+.dev-info {
+  text-align: center;
+  width: 100%;
+}
+
+.dev-role-tag {
+  display: inline-block;
+  font-size: 0.7rem; letter-spacing: 3px;
+  color: var(--col-yellow);
+  border: 1px solid rgba(247,201,72,0.3);
+  padding: 4px 12px; border-radius: 20px;
+  margin-bottom: 12px;
+  background: rgba(247,201,72,0.05);
+}
+
+.dev-name {
+  font-family: var(--font-title);
+  font-size: 1.8rem;
+  color: var(--col-text);
+  letter-spacing: 2px;
+  margin-bottom: 4px;
+}
+.dev-handle {
+  color: var(--col-cyan);
+  font-size: 0.85rem;
+  margin-bottom: 20px;
+}
+
+.dev-skills {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 8px;
+  margin-bottom: 20px;
+}
+.skill-tag {
+  font-size: 0.7rem; letter-spacing: 1px;
+  padding: 4px 10px; border-radius: 4px;
+  background: rgba(0,229,255,0.07);
+  border: 1px solid rgba(0,229,255,0.2);
+  color: var(--col-cyan);
+}
+
+.dev-bio {
+  font-size: 0.83rem; color: var(--col-muted);
+  line-height: 1.8; margin-bottom: 24px;
+  text-align: left;
+}
+
+.dev-contributions { text-align: left; margin-bottom: 24px; }
+.contrib-title {
+  font-size: 0.7rem; letter-spacing: 3px;
+  color: var(--col-muted);
+  margin-bottom: 10px;
+  text-transform: uppercase;
+}
+.contrib-list {
+  list-style: none;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.contrib-list li { font-size: 0.82rem; color: var(--col-text); }
+
+.dev-links {
+  display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;
+}
+.dev-link {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 0.8rem; letter-spacing: 1px;
+  padding: 10px 20px; border-radius: 6px;
+  text-decoration: none;
+  transition: transform 0.15s, box-shadow 0.2s;
+}
+.dev-link:hover { transform: translateY(-2px); }
+.link-github {
+  background: #161b22;
+  color: #fff;
+  border: 1px solid #30363d;
+}
+.link-github:hover { box-shadow: 0 4px 12px rgba(255,255,255,0.1); }
+.link-repo {
+  background: transparent;
+  color: var(--col-cyan);
+  border: 1px solid rgba(0,229,255,0.3);
+}
+.link-repo:hover { box-shadow: var(--glow-cyan); }
+
+/* ---- PROJECT SECTION ---- */
+.project-info {
+  margin-bottom: 60px;
+}
+
+.project-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+}
+.proj-card {
+  background: var(--col-surface);
+  border: 1px solid var(--col-border);
+  border-radius: 8px;
+  padding: 24px 20px;
+  text-align: center;
+  transition: border-color 0.3s, transform 0.2s;
+}
+.proj-card:hover {
+  border-color: rgba(0,229,255,0.3);
+  transform: translateY(-3px);
+}
+.proj-icon { font-size: 2rem; margin-bottom: 12px; }
+.proj-card h3 {
+  font-family: var(--font-title);
+  font-size: 0.9rem; letter-spacing: 2px;
+  color: var(--col-text);
+  margin-bottom: 10px;
+}
+.proj-card p { font-size: 0.82rem; color: var(--col-muted); line-height: 1.7; }
+
+/* ---- CTA ---- */
+.team-cta {
+  text-align: center;
+  padding: 40px 0;
+}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width: 768px) {
+  .team-grid { grid-template-columns: 1fr; }
+  .dev-card { padding: 28px 20px; }
+}
