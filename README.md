@@ -22,7 +22,7 @@ A **2D stealth‑arcade game** where you play as Pac‑Man, but now you must avo
 
 ## 🎮 How to Play
 
-1. **Move** – `WASD` or **Arrow Keys**.
+1. **Move** – `WASD` or **Arrow Keys** (also on‑screen D‑pad for mobile).
 2. **Collect dots** – each dot gives 10 points.
 3. **Find the 3 keys** – each key gives 100 points.
 4. **Grab power‑ups** – invisibility (`👁`) makes you vanish for 6 seconds; speed (`⚡`) makes you faster.
@@ -43,11 +43,12 @@ This means invisibility truly protects you – you can walk right through enemie
 
 ## 🕹️ Controls
 
-| Action            | Keyboard           |
-|-------------------|--------------------|
-| Move up           | `↑` or `W`         |
-| Move down         | `↓` or `S`         |
-| Move left         | `←` or `A`         |
-| Move right        | `→` or `D`         |
-| Pause / Resume    | `P`                | 
+| Action            | Keyboard           | Touch / Mobile          |
+|-------------------|--------------------|-------------------------|
+| Move up           | `↑` or `W`         | Up button on D‑pad      |
+| Move down         | `↓` or `S`         | Down button             |
+| Move left         | `←` or `A`         | Left button             |
+| Move right        | `→` or `D`         | Right button            |
+| Pause / Resume    | `P`                | On‑screen "⏸ Pause" button |
 
+## 📂 Project Structure
