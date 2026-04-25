@@ -50,6 +50,4 @@ This means invisibility truly protects you – you can walk right through enemie
 | Move left         | `←` or `A`         | Left button             |
 | Move right        | `→` or `D`         | Right button            |
 | Pause / Resume    | `P`                | On‑screen "⏸ Pause" button |
-| Mute music        | (menu only)        | "🔇 MUSIC" button        |
 
-## 📂 Project Structure
