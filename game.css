@@ -44,7 +44,7 @@ body::after {
   content: '';
   position: fixed;
   inset: 0;
-  z-index: 9999;
+  z-index: 100;  /* was 9999 — lowered so HUD & overlays render above scanlines */
   background: repeating-linear-gradient(
     0deg,
     transparent,
@@ -264,11 +264,13 @@ body::after {
   font-family: var(--font-title);
   font-size: 0.72rem;
   letter-spacing: 3px;
-  padding: 4px 16px;
+  padding: 4px 12px;
   border-radius: 20px;
   border: 1px solid transparent;
   transition: all 0.3s ease-out;
-  min-width: 200px;
+  min-width: 120px;       /* was 200px — caused overflow on narrow screens */
+  max-width: 220px;
+  white-space: nowrap;
   text-align: center;
 }
 
@@ -529,3 +531,100 @@ body::after {
   border: 1px solid rgba(0, 229, 255, 0.3) !important;
 }
 .btn-home:hover { box-shadow: var(--glow-cyan); }
+/* ============================================================
+   RESPONSIVE — HUD & GAME SCREEN MOBILE
+   ============================================================ */
+@media (max-width: 500px) {
+  #hud {
+    padding: 6px 10px;
+    flex-wrap: wrap;
+    min-height: auto;
+    gap: 6px;
+  }
+  .hud-left, .hud-right {
+    gap: 12px;
+  }
+  .hud-center {
+    order: -1;       /* move status badge to top row on very narrow screens */
+    flex: 0 0 100%;
+    justify-content: center;
+  }
+  .hud-value { font-size: 0.85rem; }
+  .hud-label { font-size: 0.52rem; }
+  .hud-status {
+    font-size: 0.62rem;
+    letter-spacing: 2px;
+    padding: 3px 10px;
+    min-width: 0;
+  }
+  .pause-btn {
+    font-size: 0.62rem;
+    padding: 3px 8px;
+  }
+}
+
+/* ============================================================
+   IN-GAME HINT OVERLAY (fades after 4s on game start)
+   ============================================================ */
+.ingame-hint {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  pointer-events: none;
+  transition: opacity 1s ease;
+}
+
+.ingame-hint.hidden { display: none; }
+
+.ingame-hint-inner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  background: rgba(5, 8, 16, 0.88);
+  border: 1px solid rgba(0, 229, 255, 0.25);
+  border-radius: 8px;
+  padding: 8px 18px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 1px;
+  color: var(--col-muted);
+  backdrop-filter: blur(4px);
+}
+
+.hint-sep {
+  color: var(--col-border);
+}
+
+/* ============================================================
+   EXIT LOCKED HINT
+   ============================================================ */
+.exit-locked-hint {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  pointer-events: none;
+  background: rgba(5, 8, 16, 0.9);
+  border: 1px solid rgba(255, 68, 68, 0.4);
+  border-radius: 6px;
+  padding: 6px 16px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--col-red);
+  letter-spacing: 1px;
+  animation: fade-in-out 2.5s ease forwards;
+}
+
+.exit-locked-hint.hidden { display: none; }
+
+@keyframes fade-in-out {
+  0%   { opacity: 0; transform: translateX(-50%) translateY(4px); }
+  15%  { opacity: 1; transform: translateX(-50%) translateY(0); }
+  70%  { opacity: 1; }
+  100% { opacity: 0; }
+}

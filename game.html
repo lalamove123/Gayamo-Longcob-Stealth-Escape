@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Play — Pacman: Shadow Escape</title>
+  <meta name="description" content="Play Pacman: Shadow Escape — a stealth arcade game. Dodge enemy vision cones, collect all dots and keys, then escape!" />
   <link rel="stylesheet" href="game.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Share+Tech+Mono&display=swap" rel="stylesheet">
@@ -83,6 +84,10 @@
           <span class="hud-value" id="hudKey">0/3</span>
         </div>
         <div class="hud-item">
+          <span class="hud-label">BEST</span>
+          <span class="hud-value" id="hudHighScore">0</span>
+        </div>
+        <div class="hud-item">
           <span class="hud-label">POWER</span>
           <span class="hud-value" id="hudPower">—</span>
         </div>
@@ -93,6 +98,24 @@
 
     <!-- Canvas wrapper: fills remaining vertical space -->
     <div id="canvasWrapper">
+      <!-- In-game hint overlay (fades after 4s) -->
+      <div id="inGameHint" class="ingame-hint hidden">
+        <div class="ingame-hint-inner">
+          <span>WASD / Arrows to move</span>
+          <span class="hint-sep">·</span>
+          <span>Collect all dots + 3 🔑</span>
+          <span class="hint-sep">·</span>
+          <span>Reach EXIT to win</span>
+          <span class="hint-sep">·</span>
+          <span>Stay out of 👁 vision cones!</span>
+        </div>
+      </div>
+
+      <!-- Exit locked indicator -->
+      <div id="exitLockedHint" class="exit-locked-hint hidden">
+        <span>🔒 Collect all dots + keys first!</span>
+      </div>
+
       <!-- Floating alert icon (! or ⚠) shown when suspicious/detected -->
       <div id="alertOverlay" class="alert-overlay hidden">
         <span id="alertText" class="alert-text">!</span>
@@ -126,6 +149,7 @@
       <h2 class="end-title" style="color:var(--col-red)">DETECTED!</h2>
       <p class="end-sub">An enemy spotted you.<br>You've been caught.</p>
       <div class="end-score" id="goScore">Score: 0</div>
+      <div class="end-score" id="goBestScore" style="font-size:0.9rem;color:var(--col-muted)">Best: 0</div>
       <div class="end-btns">
         <button class="btn-end btn-retry" id="btnRetry">↺ &nbsp;TRY AGAIN</button>
         <a href="index.html" class="btn-end btn-home">⌂ &nbsp;HOME</a>
@@ -143,6 +167,7 @@
       <h2 class="end-title" style="color:var(--col-yellow)">ESCAPED!</h2>
       <p class="end-sub">You collected everything<br>and slipped away unseen!</p>
       <div class="end-score" id="winScore">Score: 0</div>
+      <div class="end-score" id="winBestScore" style="font-size:0.9rem;color:var(--col-muted)">Best: 0</div>
       <div class="end-btns">
         <button class="btn-end btn-retry" id="btnPlayAgain">▶ &nbsp;PLAY AGAIN</button>
         <a href="index.html" class="btn-end btn-home">⌂ &nbsp;HOME</a>

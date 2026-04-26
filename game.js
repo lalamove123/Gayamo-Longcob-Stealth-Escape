@@ -28,7 +28,11 @@ const PLAYER_SPEED       = 2.5;
 const PLAYER_SPEED_FAST  = 4.5;
 const ENEMY_SPEED        = 1.3;
 const VISION_RANGE       = 5;
-const VISION_ANGLE       = 55;
+// VISION_ANGLE is the HALF-angle of the cone in degrees (total cone = 2× this).
+// Previously was 55, but drawVisionCone used it as ±55° → 110° arc while
+// detectPlayer correctly used it as a ±55° half-angle check.
+// Now set to 50° half-angle (100° total) so visual and detection are consistent.
+const VISION_ANGLE       = 50;
 const POWERUP_DURATION   = 6;
 
 const SUSPICIOUS_TIME  = 0.9;
@@ -38,9 +42,9 @@ const TILE_WALL  = 1;
 const TILE_FLOOR = 0;
 const TILE_SAFE  = 2;
 
-// Proximity instant kill distance (pixels) – about 0.5 tiles.
-// When the distance between player and enemy is less than this,
-// the player dies immediately (unless invisible or on safe tile).
+// Proximity instant kill distance (pixels) – about 0.85 tiles.
+// Enemy is drawn at radius ~0.40 tiles. Kill triggers when centers are within
+// this distance, so the player must clearly overlap the ghost sprite.
 const PROXIMITY_KILL_DIST = TILE_SIZE * 0.5;
 
 let gamePaused = false;
@@ -271,6 +275,7 @@ const state = {
   keys:       [],
   powerups:   [],
   score:      0,
+  highScore:  parseInt(localStorage.getItem('pse_highscore') || '0', 10),
   keysCollected: 0,
   dotsLeft:   0,
 
@@ -492,7 +497,7 @@ function detectPlayer(dt) {
     const angleDiff = Math.abs(wrapAngle(angleToPlayer - enemy.dir));
     if (angleDiff > VISION_ANGLE_RAD) { enemy.alertLevel = 0; continue; }
     if (!hasLineOfSight(enemy.x, enemy.y, p.x, p.y)) { enemy.alertLevel = 0; continue; }
-    enemy.alertLevel = 2;
+    enemy.alertLevel = 1; // suspicious — will be upgraded to 2 at detection threshold
     anyEnemySees = true;
   }
 
@@ -509,10 +514,14 @@ function detectPlayer(dt) {
     }
     if (state.suspTimer >= SUSPICIOUS_TIME) {
       p.dangerLevel = 1;
+      // Enemies fully detecting: mark alertLevel 2 for red cone
+      for (const e of state.enemies) if (e.alertLevel >= 1) e.alertLevel = 2;
       _setAlert('detected');
       gameOver();
       return;
     }
+    // Suspicious: mark alertLevel 1 for yellow cone
+    for (const e of state.enemies) if (e.alertLevel === 2) e.alertLevel = 1;
     _setAlert('suspicious');
   } else {
     // No enemy sees the player – drain suspicion timer
@@ -594,12 +603,24 @@ function updatePowerup(dt) {
 }
 
 function checkWinCondition() {
-  if (state.dotsLeft > 0) return;
-  if (state.keysCollected < KEY_POSITIONS.length) return;
   const { x, y } = tileCenter(EXIT_POS.col, EXIT_POS.row);
-  if (Math.hypot(state.player.x - x, state.player.y - y) < TILE_SIZE * 0.7) {
-    triggerWin();
+  const nearExit = Math.hypot(state.player.x - x, state.player.y - y) < TILE_SIZE * 0.7;
+
+  if (!nearExit) return;
+
+  // Conditions not met — show locked hint
+  if (state.dotsLeft > 0 || state.keysCollected < KEY_POSITIONS.length) {
+    const hint = document.getElementById('exitLockedHint');
+    if (hint && hint.classList.contains('hidden')) {
+      hint.classList.remove('hidden');
+      // Remove and re-add to restart animation
+      void hint.offsetWidth;
+      setTimeout(() => hint.classList.add('hidden'), 2500);
+    }
+    return;
   }
+
+  triggerWin();
 }
 
 function gameOver() {
@@ -610,6 +631,8 @@ function gameOver() {
   stopGameplayMusic();
   playDeathSound();
   document.getElementById('goScore').textContent = 'Score: ' + state.score;
+  const goBest = document.getElementById('goBestScore');
+  if (goBest) goBest.textContent = 'Best: ' + state.highScore;
   setTimeout(() => showScreen('screen-gameover'), 650);
 }
 
@@ -620,6 +643,13 @@ function triggerWin() {
   stopGameplayMusic();
   playWinSound();
   document.getElementById('winScore').textContent = 'Score: ' + state.score;
+  const winBest = document.getElementById('winBestScore');
+  if (winBest) winBest.textContent = 'Best: ' + state.highScore;
+  // Persist high score after win bonus
+  if (state.score > state.highScore) {
+    state.highScore = state.score;
+    try { localStorage.setItem('pse_highscore', state.highScore); } catch(_) {}
+  }
   setTimeout(() => showScreen('screen-win'), 350);
 }
 
@@ -736,6 +766,7 @@ function drawPowerups() {
 
 function drawVisionCone(enemy) {
   const range = VISION_RANGE * TILE_SIZE;
+  // VISION_ANGLE_RAD is the HALF-angle — arc spans dir±halfAngle (total = 2×VISION_ANGLE_RAD)
   const halfAngle = VISION_ANGLE_RAD;
   const pulse = Math.sin(enemy.visAnim) * 0.05 + 0.14;
   let innerRGBA;
@@ -877,15 +908,18 @@ function drawSuspicionOverlay(ts) {
 
 function drawPauseOverlay() {
   if (!gamePaused) return;
-  ctx.fillStyle = 'rgba(0,0,0,0.75)';
+  ctx.fillStyle = 'rgba(0,0,0,0.78)';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.font = 'bold 32px monospace';
-  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 30px "Bungee", cursive';
+  ctx.fillStyle = '#00e5ff';
   ctx.textAlign = 'center';
-  ctx.fillText('⏸ PAUSED', canvas.width / 2, canvas.height / 2);
-  ctx.font = '14px monospace';
-  ctx.fillStyle = '#aaaaaa';
-  ctx.fillText('Press P or click Resume', canvas.width / 2, canvas.height / 2 + 40);
+  ctx.shadowColor = 'rgba(0,229,255,0.8)';
+  ctx.shadowBlur = 16;
+  ctx.fillText('⏸  PAUSED', canvas.width / 2, canvas.height / 2);
+  ctx.shadowBlur = 0;
+  ctx.font = '14px "Share Tech Mono", monospace';
+  ctx.fillStyle = '#5a6a8a';
+  ctx.fillText('Press P or click Resume to continue', canvas.width / 2, canvas.height / 2 + 40);
   ctx.textAlign = 'left';
 }
 
@@ -1003,6 +1037,13 @@ function updateHUD() {
     puEl.textContent = '—';
     puEl.style.color = 'var(--col-muted)';
   }
+  // Update high score live and persist
+  if (state.score > state.highScore) {
+    state.highScore = state.score;
+    try { localStorage.setItem('pse_highscore', state.highScore); } catch(_) {}
+  }
+  const hsEl = document.getElementById('hudHighScore');
+  if (hsEl) hsEl.textContent = state.highScore;
 }
 
 function updateHUDStatus(level) {
@@ -1100,6 +1141,22 @@ function startGame() {
   startGameplayMusic();
   state.lastTS = performance.now();
   setTimeout(resizeCanvas, 60);
+
+  // Show in-game hint overlay briefly on first play
+  showInGameHint();
+}
+
+function showInGameHint() {
+  const hint = document.getElementById('inGameHint');
+  if (!hint) return;
+  hint.classList.remove('hidden');
+  hint.style.opacity = '1';
+  // Fade out after 4 seconds
+  setTimeout(() => {
+    hint.style.transition = 'opacity 1s ease';
+    hint.style.opacity = '0';
+    setTimeout(() => hint.classList.add('hidden'), 1000);
+  }, 4000);
 }
 
 function spawnMenuDots() {
@@ -1126,12 +1183,14 @@ function handleStartClick() {
 document.getElementById('btnStart').addEventListener('click', handleStartClick);
 document.getElementById('btnRetry').addEventListener('click', handleStartClick);
 document.getElementById('btnPlayAgain').addEventListener('click', handleStartClick);
-const muteBtn = document.getElementById('menuMuteBtn');
-if (muteBtn) muteBtn.addEventListener('click', toggleMuteMusic);
+// menuMuteBtn uses inline onclick="toggleMuteMusic()" in HTML — no addEventListener needed (would double-fire)
 window.addEventListener('resize', resizeCanvas);
 
 spawnMenuDots();
 startMenuMusic();
+// Initialise high score display from localStorage
+const hsEl = document.getElementById('hudHighScore');
+if (hsEl) hsEl.textContent = state.highScore;
 document.getElementById('screen-menu').addEventListener('click', function onMenuClick(e) {
   if (e.target.id === 'btnStart' || e.target.id === 'menuMuteBtn') return;
   startMenuMusic();
