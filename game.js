@@ -2,19 +2,11 @@
 PACMAN: SHADOW ESCAPE — game.js
 A 2D stealth escape game built with HTML5 Canvas + JS
 
-FILE STRUCTURE:
-1. Constants & Configuration
-2. Maze Definition
-3. Game State
-4. Utility Functions
-5. Player Logic
-6. Enemy Logic
-7. Detection System <-- detectPlayer()
-8. Pickups, Win, GameOver
-9. Drawing / Rendering
-10. Game Loop
-11. Input Handling
-12. Screen Management & Boot
+FEATURES:
+- 3 lives with respawn invincibility (2 seconds)
+- Smooth, wall‑clipped vision cones (1 ray/degree)
+- 100% dot coverage, 3 keys, power‑ups (invis/speed)
+- Procedural audio & music, pause, mobile touch controls
 ============================================================ */
 
 'use strict';
@@ -24,15 +16,11 @@ FILE STRUCTURE:
 ============================================================ */
 
 const TILE_SIZE          = 36;
-const PLAYER_SPEED       = 2.5;
+const PLAYER_SPEED       = 2.2;
 const PLAYER_SPEED_FAST  = 4.5;
-const ENEMY_SPEED        = 1.3;
+const ENEMY_SPEED        = 1.2;
 const VISION_RANGE       = 5;
-// VISION_ANGLE is the HALF-angle of the cone in degrees (total cone = 2× this).
-// Previously was 55, but drawVisionCone used it as ±55° → 110° arc while
-// detectPlayer correctly used it as a ±55° half-angle check.
-// Now set to 50° half-angle (100° total) so visual and detection are consistent.
-const VISION_ANGLE       = 50;
+const VISION_ANGLE       = 50;                 // half‑angle (total 100°)
 const POWERUP_DURATION   = 6;
 
 const SUSPICIOUS_TIME  = 0.9;
@@ -42,10 +30,11 @@ const TILE_WALL  = 1;
 const TILE_FLOOR = 0;
 const TILE_SAFE  = 2;
 
-// Proximity instant kill distance (pixels) – about 0.85 tiles.
-// Enemy is drawn at radius ~0.40 tiles. Kill triggers when centers are within
-// this distance, so the player must clearly overlap the ghost sprite.
-const PROXIMITY_KILL_DIST = TILE_SIZE * 0.5;
+const PROXIMITY_KILL_DIST = TILE_SIZE * 0.8;
+
+// ---------- LIVES SYSTEM ----------
+const MAX_LIVES = 3;
+const RESPAWN_INVINCIBLE_DUR = 2.0;   // seconds
 
 let gamePaused = false;
 
@@ -79,14 +68,12 @@ const MAZE_DATA = [
 const PLAYER_START = { col: 1, row: 1 };
 const EXIT_POS     = { col: 19, row: 15 };
 
-// 3 keys scattered across the maze
 const KEY_POSITIONS = [
   { col: 10, row: 3 },
   { col: 3,  row: 11 },
   { col: 18, row: 7 },
 ];
 
-// 8 power‑ups: 4 invisibility, 4 speed
 const POWERUP_SPAWNS = [
   { col: 5,  row: 5,  type: 'invis' },
   { col: 2,  row: 13, type: 'invis' },
@@ -98,7 +85,6 @@ const POWERUP_SPAWNS = [
   { col: 7,  row: 9,  type: 'speed' },
 ];
 
-// Enemy patrols
 const ENEMY_SPAWNS = [
   { patrol: [[2,2],[6,2],[6,4],[2,4],[2,2]],     color: '#ff3cac' },
   { patrol: [[18,2],[14,2],[14,4],[18,4],[18,2]], color: '#ff6b6b' },
@@ -108,7 +94,7 @@ const ENEMY_SPAWNS = [
 ];
 
 /* ============================================================
-   3. AUDIO ENGINE (fully synthesized, unchanged)
+   3. AUDIO ENGINE (fully synthesized)
 ============================================================ */
 
 const AudioEngine = (() => {
@@ -264,7 +250,7 @@ const playDeathSound     = () => AudioEngine.deathJingle();
 const playWinSound       = () => AudioEngine.winFanfare();
 
 /* ============================================================
-   4. GAME STATE
+   4. GAME STATE (with lives & respawn timer)
 ============================================================ */
 
 const state = {
@@ -278,6 +264,10 @@ const state = {
   highScore:  parseInt(localStorage.getItem('pse_highscore') || '0', 10),
   keysCollected: 0,
   dotsLeft:   0,
+
+  // LIVES SYSTEM
+  lives:      MAX_LIVES,
+  respawnTimer: 0,    // >0 means invincible and respawning
 
   alertLevel: 'safe',
   suspTimer:  0,
@@ -308,9 +298,16 @@ function collidesWall(px, py, radius) {
 }
 function wrapAngle(a) { while (a > Math.PI) a -= Math.PI*2; while (a < -Math.PI) a += Math.PI*2; return a; }
 function lerp(a, b, t) { return a + (b - a) * t; }
+function parseHexColor(hex) {
+  return {
+    r: parseInt(hex.slice(1,3), 16),
+    g: parseInt(hex.slice(3,5), 16),
+    b: parseInt(hex.slice(5,7), 16)
+  };
+}
 
 /* ============================================================
-   6. PLAYER LOGIC (unchanged)
+   6. PLAYER LOGIC
 ============================================================ */
 function createPlayer() {
   const { x, y } = tileCenter(PLAYER_START.col, PLAYER_START.row);
@@ -371,7 +368,7 @@ function updatePlayer(dt) {
 }
 
 /* ============================================================
-   7. ENEMY LOGIC (unchanged)
+   7. ENEMY LOGIC
 ============================================================ */
 function createEnemies() {
   return ENEMY_SPAWNS.map(def => {
@@ -423,7 +420,7 @@ function updateEnemy(enemy, dt) {
 }
 
 /* ============================================================
-   8. DETECTION SYSTEM (CORRECT ORDER WITH INVISIBILITY FIRST)
+   8. DETECTION SYSTEM (with respawn invincibility)
 ============================================================ */
 
 const VISION_ANGLE_RAD = (VISION_ANGLE * Math.PI) / 180;
@@ -444,50 +441,39 @@ function hasLineOfSight(x1, y1, x2, y2) {
   return true;
 }
 
-/**
- * detectPlayer(dt)
- *
- * DETECTION PRIORITY (CRITICAL – MUST BE IN THIS ORDER):
- * 1. INVISIBILITY POWER‑UP ACTIVE → no detection, clear alerts, return.
- * 2. PLAYER ON SAFE (SHADOW) TILE → no detection, clear alerts, return.
- * 3. PROXIMITY TOUCH (ghost collision) → instant game over.
- * 4. NORMAL VISION CONE (range, angle, line‑of‑sight) → 3‑stage alert.
- *
- * This order ensures that when invisible, you can walk directly through
- * ghosts without being detected or killed. Safe tiles also provide full
- * protection. Only when neither invisible nor on a safe tile does touching
- * a ghost cause immediate death.
- */
 function detectPlayer(dt) {
   const p = state.player;
   if (!p || !p.alive) return;
 
-  // STEP 1: Invisibility power‑up – completely undetectable
+  // RESPAWN INVINCIBILITY – cannot be detected
+  if (state.respawnTimer > 0) {
+    _clearAllAlerts(dt);
+    return;
+  }
+
+  // Invisibility power‑up
   if (state.powerType === 'invis') {
     _clearAllAlerts(dt);
     return;
   }
 
-  // STEP 2: Safe tile (shadow zone) – also undetectable
+  // Safe tile
   const pt = pixelToTile(p.x, p.y);
   if (getTile(pt.col, pt.row) === TILE_SAFE) {
     _clearAllAlerts(dt);
     return;
   }
 
-  // STEP 3: Proximity instant kill (player touches a ghost)
-  // This only runs if NOT invisible and NOT on safe tile.
+  // Proximity kill (only if not invincible, not invisible, not on safe tile)
   for (const enemy of state.enemies) {
-    const dist = Math.hypot(p.x - enemy.x, p.y - enemy.y);
-    if (dist < PROXIMITY_KILL_DIST) {
-      // Immediate death – no grace period, no alert bar
+    if (Math.hypot(p.x - enemy.x, p.y - enemy.y) < PROXIMITY_KILL_DIST) {
       _setAlert('detected');
-      gameOver();
+      playerDeath();      // use new respawn logic
       return;
     }
   }
 
-  // STEP 4: Normal vision cone detection (range, angle, line‑of‑sight)
+  // Vision cone detection
   let anyEnemySees = false;
   for (const enemy of state.enemies) {
     const dx = p.x - enemy.x, dy = p.y - enemy.y;
@@ -497,16 +483,14 @@ function detectPlayer(dt) {
     const angleDiff = Math.abs(wrapAngle(angleToPlayer - enemy.dir));
     if (angleDiff > VISION_ANGLE_RAD) { enemy.alertLevel = 0; continue; }
     if (!hasLineOfSight(enemy.x, enemy.y, p.x, p.y)) { enemy.alertLevel = 0; continue; }
-    enemy.alertLevel = 1; // suspicious — will be upgraded to 2 at detection threshold
+    enemy.alertLevel = 1;
     anyEnemySees = true;
   }
 
   if (anyEnemySees) {
-    // First frame entering a cone → play harsh alarm
     if (state.alertLevel === 'safe') AudioEngine.alertDetected();
     state.suspTimer += dt;
     p.dangerLevel = Math.min(state.suspTimer / SUSPICIOUS_TIME, 1);
-    // Periodic pulse sound while suspicious
     state._alertPulseTimer += dt;
     if (state._alertPulseTimer >= 0.35) {
       state._alertPulseTimer = 0;
@@ -514,17 +498,14 @@ function detectPlayer(dt) {
     }
     if (state.suspTimer >= SUSPICIOUS_TIME) {
       p.dangerLevel = 1;
-      // Enemies fully detecting: mark alertLevel 2 for red cone
       for (const e of state.enemies) if (e.alertLevel >= 1) e.alertLevel = 2;
       _setAlert('detected');
-      gameOver();
+      playerDeath();
       return;
     }
-    // Suspicious: mark alertLevel 1 for yellow cone
     for (const e of state.enemies) if (e.alertLevel === 2) e.alertLevel = 1;
     _setAlert('suspicious');
   } else {
-    // No enemy sees the player – drain suspicion timer
     state.suspTimer = Math.max(0, state.suspTimer - dt * SUSPICIOUS_DRAIN);
     state._alertPulseTimer = 0;
     p.dangerLevel = Math.max(0, state.suspTimer / SUSPICIOUS_TIME);
@@ -548,7 +529,7 @@ function _setAlert(level) {
 }
 
 /* ============================================================
-   9. PICKUPS, WIN CONDITION, GAME OVER (unchanged)
+   9. PICKUPS, WIN CONDITION, GAME OVER (with respawn)
 ============================================================ */
 function checkPickups() {
   const p = state.player;
@@ -608,12 +589,10 @@ function checkWinCondition() {
 
   if (!nearExit) return;
 
-  // Conditions not met — show locked hint
   if (state.dotsLeft > 0 || state.keysCollected < KEY_POSITIONS.length) {
     const hint = document.getElementById('exitLockedHint');
     if (hint && hint.classList.contains('hidden')) {
       hint.classList.remove('hidden');
-      // Remove and re-add to restart animation
       void hint.offsetWidth;
       setTimeout(() => hint.classList.add('hidden'), 2500);
     }
@@ -623,17 +602,42 @@ function checkWinCondition() {
   triggerWin();
 }
 
-function gameOver() {
+// ----- NEW: Player death with lives management -----
+function playerDeath() {
   if (state.screen !== 'playing') return;
-  state.player.alive = false;
-  state.screen = 'gameover';
-  state.flashAlpha = 0.75;
-  stopGameplayMusic();
   playDeathSound();
-  document.getElementById('goScore').textContent = 'Score: ' + state.score;
-  const goBest = document.getElementById('goBestScore');
-  if (goBest) goBest.textContent = 'Best: ' + state.highScore;
-  setTimeout(() => showScreen('screen-gameover'), 650);
+  state.lives--;
+  updateHUDLives();
+  state.flashAlpha = 0.75;
+
+  if (state.lives > 0) {
+    // Respawn
+    const { x, y } = tileCenter(PLAYER_START.col, PLAYER_START.row);
+    state.player.x = x;
+    state.player.y = y;
+    state.player.dir = 0;
+    state.player.dangerLevel = 0;
+    state.player.alive = true;
+    state.respawnTimer = RESPAWN_INVINCIBLE_DUR;
+    state.suspTimer = 0;
+    state.alertLevel = 'safe';
+    for (const e of state.enemies) e.alertLevel = 0;
+    updateHUDStatus('safe');
+    // Note: power‑ups remain active (they keep running)
+  } else {
+    // Game over – no lives left
+    state.player.alive = false;
+    state.screen = 'gameover';
+    stopGameplayMusic();
+    if (state.score > state.highScore) {
+      state.highScore = state.score;
+      try { localStorage.setItem('pse_highscore', state.highScore); } catch(_) {}
+    }
+    document.getElementById('goScore').textContent = 'Score: ' + state.score;
+    const goBest = document.getElementById('goBestScore');
+    if (goBest) goBest.textContent = 'Best: ' + state.highScore;
+    setTimeout(() => showScreen('screen-gameover'), 650);
+  }
 }
 
 function triggerWin() {
@@ -645,7 +649,6 @@ function triggerWin() {
   document.getElementById('winScore').textContent = 'Score: ' + state.score;
   const winBest = document.getElementById('winBestScore');
   if (winBest) winBest.textContent = 'Best: ' + state.highScore;
-  // Persist high score after win bonus
   if (state.score > state.highScore) {
     state.highScore = state.score;
     try { localStorage.setItem('pse_highscore', state.highScore); } catch(_) {}
@@ -654,7 +657,7 @@ function triggerWin() {
 }
 
 /* ============================================================
-   10. DRAWING / RENDERING (unchanged)
+   10. DRAWING / RENDERING (improved cones + blink on invincibility)
 ============================================================ */
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
@@ -764,30 +767,62 @@ function drawPowerups() {
   }
 }
 
-function drawVisionCone(enemy) {
-  const range = VISION_RANGE * TILE_SIZE;
-  // VISION_ANGLE_RAD is the HALF-angle — arc spans dir±halfAngle (total = 2×VISION_ANGLE_RAD)
-  const halfAngle = VISION_ANGLE_RAD;
-  const pulse = Math.sin(enemy.visAnim) * 0.05 + 0.14;
-  let innerRGBA;
-  if (enemy.alertLevel >= 2) innerRGBA = 'rgba(255,68,68,0.60)';
-  else if (enemy.alertLevel >= 1) innerRGBA = 'rgba(255,200,0,0.48)';
-  else {
-    const r = parseInt(enemy.color.slice(1, 3), 16);
-    const g = parseInt(enemy.color.slice(3, 5), 16);
-    const b = parseInt(enemy.color.slice(5, 7), 16);
-    innerRGBA = `rgba(${r},${g},${b},${(pulse + 0.06).toFixed(2)})`;
+// ---------- IMPROVED VISION CONE FUNCTIONS ----------
+function castRay(ox, oy, angle, maxRange) {
+  const stepSize = TILE_SIZE * 0.12;
+  const cosA = Math.cos(angle), sinA = Math.sin(angle);
+  let dist = 0;
+  while (dist < maxRange) {
+    dist = Math.min(dist + stepSize, maxRange);
+    const cx = ox + cosA * dist;
+    const cy = oy + sinA * dist;
+    const tc = Math.floor(cx / TILE_SIZE);
+    const tr = Math.floor(cy / TILE_SIZE);
+    if (isWall(tc, tr)) {
+      const backDist = Math.max(0, dist - stepSize * 0.5);
+      return { x: ox + cosA * backDist, y: oy + sinA * backDist };
+    }
   }
+  return { x: ox + cosA * maxRange, y: oy + sinA * maxRange };
+}
+
+function drawVisionCone(enemy) {
+  const range = VISION_RANGE_PX;
+  const halfAngle = VISION_ANGLE_RAD;
+  const rayCount = Math.max(20, Math.ceil((halfAngle * 2) / (Math.PI / 180)));
+  const angleStep = (halfAngle * 2) / (rayCount - 1);
+  const points = [];
+  for (let i = 0; i < rayCount; i++) {
+    const a = enemy.dir - halfAngle + i * angleStep;
+    points.push(castRay(enemy.x, enemy.y, a, range));
+  }
+
   ctx.save();
+  const pulse = Math.sin(enemy.visAnim) * 0.05 + 0.14;
+  let baseRGBA;
+  if (enemy.alertLevel >= 2) {
+    baseRGBA = 'rgba(255,68,68,0.65)';
+  } else if (enemy.alertLevel >= 1) {
+    baseRGBA = 'rgba(255,200,0,0.52)';
+  } else {
+    const { r, g, b } = parseHexColor(enemy.color);
+    baseRGBA = `rgba(${r},${g},${b},${(pulse + 0.08).toFixed(2)})`;
+  }
+
+  const grad = ctx.createRadialGradient(enemy.x, enemy.y, 0, enemy.x, enemy.y, range);
+  grad.addColorStop(0, baseRGBA);
+  grad.addColorStop(1, baseRGBA.replace(/[\d.]+\)$/, '0)'));
+
+  ctx.fillStyle = grad;
+  ctx.shadowColor = baseRGBA;
+  ctx.shadowBlur = 12;
   ctx.beginPath();
   ctx.moveTo(enemy.x, enemy.y);
-  ctx.arc(enemy.x, enemy.y, range, enemy.dir - halfAngle, enemy.dir + halfAngle, false);
+  for (const pt of points) ctx.lineTo(pt.x, pt.y);
   ctx.closePath();
-  const grad = ctx.createRadialGradient(enemy.x, enemy.y, 0, enemy.x, enemy.y, range);
-  grad.addColorStop(0, innerRGBA);
-  grad.addColorStop(1, innerRGBA.replace(/[\d.]+\)$/, '0)'));
-  ctx.fillStyle = grad;
   ctx.fill();
+  ctx.shadowBlur = 0;
+
   if (state.suspTimer > 0 && enemy.alertLevel >= 1) {
     const progress = Math.min(state.suspTimer / SUSPICIOUS_TIME, 1);
     const arcRadius = enemy.radius + 6;
@@ -809,6 +844,7 @@ function drawVisionCone(enemy) {
   }
   ctx.restore();
 }
+// ----------------------------------------------------
 
 function drawEnemy(enemy) {
   const s = TILE_SIZE * 0.42;
@@ -846,6 +882,13 @@ function drawPlayer() {
   if (!p) return;
   ctx.save();
   ctx.translate(p.x, p.y);
+
+  // Blink effect during invincibility (skip drawing every other frame)
+  if (state.respawnTimer > 0 && Math.floor(state.respawnTimer * 8) % 2 === 0) {
+    ctx.restore();
+    return;
+  }
+
   let color;
   if (state.powerType === 'invis') color = 'rgba(0,229,255,0.45)';
   else if (state.powerType === 'speed') color = '#39ff14';
@@ -924,7 +967,7 @@ function drawPauseOverlay() {
 }
 
 /* ============================================================
-   11. GAME LOOP (with pause support)
+   11. GAME LOOP (update respawn timer)
 ============================================================ */
 function gameLoop(ts) {
   const dt = Math.min((ts - state.lastTS) / 1000, 0.05);
@@ -933,6 +976,9 @@ function gameLoop(ts) {
   const playing = state.screen === 'playing' && state.player && state.player.alive;
 
   if (playing && !gamePaused) {
+    // Update respawn invincibility timer
+    if (state.respawnTimer > 0) state.respawnTimer = Math.max(0, state.respawnTimer - dt);
+
     updatePlayer(dt);
     for (const e of state.enemies) updateEnemy(e, dt);
     for (const pu of state.powerups) pu.animT = (pu.animT || 0) + dt * 3;
@@ -964,7 +1010,7 @@ function gameLoop(ts) {
 }
 
 /* ============================================================
-   12. INPUT HANDLING (keyboard + touch + pause)
+   12. INPUT HANDLING (unchanged)
 ============================================================ */
 const input = { up: false, down: false, left: false, right: false };
 
@@ -1015,7 +1061,7 @@ const pauseButton = document.getElementById('pauseBtn');
 if (pauseButton) pauseButton.addEventListener('click', togglePause);
 
 /* ============================================================
-   13. SCREEN MANAGEMENT, HUD & BOOT (with 100% dots)
+   13. SCREEN MANAGEMENT, HUD & BOOT (with lives display)
 ============================================================ */
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -1037,13 +1083,22 @@ function updateHUD() {
     puEl.textContent = '—';
     puEl.style.color = 'var(--col-muted)';
   }
-  // Update high score live and persist
   if (state.score > state.highScore) {
     state.highScore = state.score;
     try { localStorage.setItem('pse_highscore', state.highScore); } catch(_) {}
   }
   const hsEl = document.getElementById('hudHighScore');
   if (hsEl) hsEl.textContent = state.highScore;
+  updateHUDLives();
+}
+
+function updateHUDLives() {
+  const el = document.getElementById('hudLives');
+  if (!el) return;
+  let hearts = '';
+  for (let i = 0; i < state.lives; i++) hearts += '❤️';
+  if (hearts === '') hearts = '—';
+  el.textContent = hearts;
 }
 
 function updateHUDStatus(level) {
@@ -1096,6 +1151,9 @@ function startGame() {
   state._stepTimer = 0;
   state._alertPulseTimer = 0;
   state._prevPowerType = null;
+  // Reset lives
+  state.lives = MAX_LIVES;
+  state.respawnTimer = 0;
   input.up = input.down = input.left = input.right = false;
 
   gamePaused = false;
@@ -1105,8 +1163,7 @@ function startGame() {
   state.player = createPlayer();
   state.enemies = createEnemies();
 
-  // 100% dot coverage: place a dot on every walkable tile
-  // except start, exit, key positions, and power‑up spawns.
+  // 100% dot coverage
   state.dots = [];
   const skip = new Set();
   skip.add(`${PLAYER_START.col},${PLAYER_START.row}`);
@@ -1142,7 +1199,6 @@ function startGame() {
   state.lastTS = performance.now();
   setTimeout(resizeCanvas, 60);
 
-  // Show in-game hint overlay briefly on first play
   showInGameHint();
 }
 
@@ -1151,7 +1207,6 @@ function showInGameHint() {
   if (!hint) return;
   hint.classList.remove('hidden');
   hint.style.opacity = '1';
-  // Fade out after 4 seconds
   setTimeout(() => {
     hint.style.transition = 'opacity 1s ease';
     hint.style.opacity = '0';
@@ -1183,12 +1238,10 @@ function handleStartClick() {
 document.getElementById('btnStart').addEventListener('click', handleStartClick);
 document.getElementById('btnRetry').addEventListener('click', handleStartClick);
 document.getElementById('btnPlayAgain').addEventListener('click', handleStartClick);
-// menuMuteBtn uses inline onclick="toggleMuteMusic()" in HTML — no addEventListener needed (would double-fire)
 window.addEventListener('resize', resizeCanvas);
 
 spawnMenuDots();
 startMenuMusic();
-// Initialise high score display from localStorage
 const hsEl = document.getElementById('hudHighScore');
 if (hsEl) hsEl.textContent = state.highScore;
 document.getElementById('screen-menu').addEventListener('click', function onMenuClick(e) {

@@ -44,7 +44,7 @@ body::after {
   content: '';
   position: fixed;
   inset: 0;
-  z-index: 100;  /* was 9999 — lowered so HUD & overlays render above scanlines */
+  z-index: 100;
   background: repeating-linear-gradient(
     0deg,
     transparent,
@@ -220,6 +220,7 @@ body::after {
   flex-direction: column;
   align-items: center;
   line-height: 1.2;
+  min-width: 52px;
 }
 
 .hud-label {
@@ -268,7 +269,7 @@ body::after {
   border-radius: 20px;
   border: 1px solid transparent;
   transition: all 0.3s ease-out;
-  min-width: 120px;       /* was 200px — caused overflow on narrow screens */
+  min-width: 120px;
   max-width: 220px;
   white-space: nowrap;
   text-align: center;
@@ -545,7 +546,7 @@ body::after {
     gap: 12px;
   }
   .hud-center {
-    order: -1;       /* move status badge to top row on very narrow screens */
+    order: -1;
     flex: 0 0 100%;
     justify-content: center;
   }
