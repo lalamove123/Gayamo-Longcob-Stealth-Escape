@@ -68,6 +68,10 @@
           <span class="hud-value" id="hudScore">0</span>
         </div>
         <div class="hud-item">
+          <span class="hud-label">LEVEL</span>
+          <span class="hud-value" id="hudLevel">1</span>
+        </div>
+        <div class="hud-item">
           <span class="hud-label">DOTS</span>
           <span class="hud-value" id="hudDots">0/0</span>
         </div>
@@ -107,9 +111,9 @@
         <div class="ingame-hint-inner">
           <span>WASD / Arrows to move</span>
           <span class="hint-sep">·</span>
-          <span>Collect all dots + 3 🔑</span>
+          <span>Collect all dots + 3 🔑 → reach EXIT</span>
           <span class="hint-sep">·</span>
-          <span>Reach EXIT to win</span>
+          <span>Endless levels — survive as long as you can!</span>
           <span class="hint-sep">·</span>
           <span>Stay out of 👁 vision cones!</span>
         </div>
@@ -123,6 +127,14 @@
       <!-- Floating alert icon (! or ⚠) shown when suspicious/detected -->
       <div id="alertOverlay" class="alert-overlay hidden">
         <span id="alertText" class="alert-text">!</span>
+      </div>
+
+      <!-- Level transition overlay -->
+      <div id="levelTransition" class="level-transition hidden">
+        <div class="level-transition-inner">
+          <div class="level-transition-title" id="levelTransitionTitle">LEVEL COMPLETE!</div>
+          <div class="level-transition-sub" id="levelTransitionSub">Level 2 begins…</div>
+        </div>
       </div>
 
       <!-- THE GAME CANVAS — sized by JS, never by CSS width/height -->
